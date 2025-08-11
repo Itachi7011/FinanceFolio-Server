@@ -206,7 +206,121 @@ const NewUserRegistrationSchema = new mongoose.Schema({
         },
         adjustForInflation: { type: Boolean, default: true }
     },
+    savingGoals: {
+        type: [{
+          name: { type: String, required: true },
+          description: { type: String },  // Added description
+          targetAmount: { type: Number, required: true },
+          currentAmount: { type: Number, required: true, default: 0 },
+          goalDate: { type: Date, required: true },
+          priority: {
+            type: String,
+            enum: ["Low", "Medium", "High"],
+            default: "Medium"
+          },
+          category: {  // Expanded categories
+            type: String,
+            enum: ["Emergency", "Retirement", "Education", "Housing", "Vacation", 
+                   "Vehicle", "Investment", "Debt", "Other"],
+            default: "Other"
+          },
+          monthlySaving: { type: Number, default: 0 },
+          notes: { type: String },
+          progress: { type: Number, default: 0 },
+          contributions: [{
+            amount: { type: Number, required: true },
+            date: { type: Date, default: Date.now },
+            notes: { type: String }
+          }],
+          createdAt: { type: Date, default: Date.now }
+        }],
+        default: []
+      },
 
+    // Add this to your NewUserRegistrationSchema
+    billReminders: {
+        type: [{
+            name: { type: String, required: true },             // e.g., "Electricity Bill"
+            amount: { type: Number, required: true },           // e.g., 150
+            dueDate: { type: Date, required: true },            // e.g., "2025-04-15"
+            category: {
+                type: String,
+                enum: ["Utilities", "Rent/Mortgage", "Phone/Internet", "Insurance", "Subscriptions", "Credit Card", "Loan Payment", "Other"],
+                default: "Other"
+            },
+            frequency: {
+                type: String,
+                enum: ["One-time", "Weekly", "Monthly", "Quarterly", "Annually"],
+                default: "Monthly"
+            },
+            status: {
+                type: String,
+                enum: ["Pending", "Paid", "Overdue"],
+                default: "Pending"
+            },
+            isPaid: { type: Boolean, default: false },
+            paymentHistory: [{
+                date: { type: Date },
+                amount: { type: Number }
+            }],
+            reminderDays: { type: Number, default: 3 },         // Days before due date to remind
+            autopay: { type: Boolean, default: false },
+            paymentMethod: { type: String },
+            notes: { type: String },
+            createdAt: { type: Date, default: Date.now }
+        }],
+        default: []
+    },
+    taxTips: {
+        type: [{
+            title: { type: String, required: true },
+            content: { type: String, required: true },
+            category: {
+                type: String,
+                enum: ["individual", "business", "investment", "property", "retirement"],
+                default: "individual"
+            },
+            createdAt: { type: Date, default: Date.now }
+        }],
+        default: []
+    },
+    taxDeductions: {
+        type: [{
+            name: { type: String, required: true },
+            description: { type: String, required: true },
+            eligibility: { type: String, required: true },
+            maxAmount: { type: String },
+            createdAt: { type: Date, default: Date.now }
+        }],
+        default: []
+    },
+    taxPredictions: {
+        type: [{
+            year: { type: Number, required: true },
+            title: { type: String, required: true },
+            content: { type: String, required: true },
+            impact: {
+                type: String,
+                enum: ["low", "medium", "high"],
+                default: "low"
+            },
+            createdAt: { type: Date, default: Date.now }
+        }],
+        default: []
+    },
+    taxFaqs: {
+        type: [{
+            question: { type: String, required: true },
+            answer: { type: String, required: true },
+            category: {
+                type: String,
+                enum: ["general", "filing", "deductions", "business", "international"],
+                default: "general"
+            },
+            createdAt: { type: Date, default: Date.now }
+        }],
+        default: []
+    },
     status: {
         type: String,
     },
