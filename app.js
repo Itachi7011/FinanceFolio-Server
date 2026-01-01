@@ -24,8 +24,6 @@ const PORT = process.env.PORT || 7000;
 
 
 
-
-
 // Load environment variables
 dotenv.config();
 
@@ -2229,21 +2227,21 @@ app.get('/api/financial-health', userAuthenticate, async (req, res) => {
   try {
     const userId = req.user._id;
     const user = await NewUserRegistration.findById(userId);
-    
+
     if (!user) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         score: 0,
         message: "User not found"
       });
     }
-    
+
     // Provide default values if calculations fail
     const savingsRate = calculateSavingsRate(user) || 0;
     const debtRatio = calculateDebtToIncomeRatio(user) || 0;
     const budgetAdherence = calculateBudgetAdherence(user) || 0;
     const diversificationScore = calculateDiversificationScore(user) || 0;
     const emergencyFundStatus = calculateEmergencyFundStatus(user) || 0;
-    
+
     const score = Math.round(
       (savingsRate * 20) +
       (debtRatio * 20) +
@@ -2251,8 +2249,8 @@ app.get('/api/financial-health', userAuthenticate, async (req, res) => {
       (diversificationScore * 20) +
       (emergencyFundStatus * 20)
     );
-    
-    res.status(200).json({ 
+
+    res.status(200).json({
       score: Math.min(score, 100),
       savingsRate,
       debtToIncomeRatio: debtRatio,
@@ -2262,7 +2260,7 @@ app.get('/api/financial-health', userAuthenticate, async (req, res) => {
     });
   } catch (error) {
     console.error('Financial health error:', error);
-    res.status(200).json({ 
+    res.status(200).json({
       score: 0,
       message: "Using default values due to calculation error"
     });
@@ -2273,7 +2271,7 @@ app.get('/api/financial-metrics', userAuthenticate, async (req, res) => {
   try {
     const userId = req.user._id;
     const user = await NewUserRegistration.findById(userId);
-    
+
     if (!user) {
       return res.status(200).json({
         netWorth: 0,
@@ -2283,13 +2281,13 @@ app.get('/api/financial-metrics', userAuthenticate, async (req, res) => {
         message: "User not found, using default values"
       });
     }
-    
+
     // Provide default values if calculations fail
     const netWorth = calculateNetWorth(user) || 0;
     const savingsRate = calculateSavingsRate(user) || 0;
     const debtToIncome = calculateDebtToIncomeRatio(user) || 0;
     const emergencyFundMonths = calculateEmergencyFundMonths(user) || 0;
-    
+
     res.status(200).json({
       netWorth,
       savingsRate,
@@ -2308,7 +2306,7 @@ app.get('/api/financial-metrics', userAuthenticate, async (req, res) => {
   }
 });
 
-app.get('/api/milestones',userAuthenticate, async (req, res) => {
+app.get('/api/milestones', userAuthenticate, async (req, res) => {
   try {
     const userId = req.user._id;
     const user = await NewUserRegistration.findById(userId);
@@ -2322,48 +2320,48 @@ app.get('/api/milestones',userAuthenticate, async (req, res) => {
 //   try {
 //     const userId = req.user._id;
 //     const milestone = req.body;
-    
+
 //     const user = await NewUserRegistration.findByIdAndUpdate(
 //       userId,
 //       { $push: { savingGoals: milestone } },
 //       { new: true }
 //     );
-    
+
 //     res.status(201).json(user.savingGoals);
 //   } catch (error) {
 //     res.status(500).json({ message: error.message });
 //   }
 // });
 
-app.put('/api/milestones/:id',userAuthenticate, async (req, res) => {
+app.put('/api/milestones/:id', userAuthenticate, async (req, res) => {
   try {
     const userId = req.user._id;
     const milestoneId = req.params.id;
     const updates = req.body;
-    
+
     const user = await NewUserRegistration.findOneAndUpdate(
       { _id: userId, "savingGoals._id": milestoneId },
       { $set: { "savingGoals.$": updates } },
       { new: true }
     );
-    
+
     res.status(200).json(user.savingGoals);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
 
-app.delete('/api/milestones/:id',userAuthenticate, async (req, res) => {
+app.delete('/api/milestones/:id', userAuthenticate, async (req, res) => {
   try {
     const userId = req.user._id;
     const milestoneId = req.params.id;
-    
+
     const user = await NewUserRegistration.findByIdAndUpdate(
       userId,
       { $pull: { savingGoals: { _id: milestoneId } } },
       { new: true }
     );
-    
+
     res.status(200).json(user.savingGoals);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -2409,7 +2407,7 @@ app.get("/api/users/:id", async (req, res) => {
 app.post("/api/users", async (req, res) => {
   try {
     const { fullname, email, userName, password, userType } = req.body;
-    
+
     // Validate input
     if (!fullname || !email || !userName || !password) {
       return res.status(400).json({ message: "Missing required fields" });
@@ -2450,11 +2448,11 @@ app.put("/api/users/:id", async (req, res) => {
       { fullname, userName, userType },
       { new: true }
     );
-    
+
     if (!updatedUser) {
       return res.status(404).json({ message: "User not found" });
     }
-    
+
     res.json(updatedUser);
   } catch (err) {
     console.error(err);
@@ -2466,11 +2464,11 @@ app.put("/api/users/:id", async (req, res) => {
 app.delete("/api/users/:id", async (req, res) => {
   try {
     const deletedUser = await UsersDB.findByIdAndDelete(req.params.id);
-    
+
     if (!deletedUser) {
       return res.status(404).json({ message: "User not found" });
     }
-    
+
     res.json({ message: "User deleted successfully" });
   } catch (err) {
     console.error(err);
