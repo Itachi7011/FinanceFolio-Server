@@ -1,0 +1,165 @@
+// models/Admin.js
+const mongoose = require('mongoose');
+
+const AdminSchema = new mongoose.Schema({
+    userId: { 
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: 'User', 
+        required: true,
+        unique: true 
+    },
+    
+    // Admin Role & Permissions
+    role: {
+        type: String,
+        enum: ['super_admin', 'admin', 'moderator', 'support', 'analyst'],
+        required: true
+    },
+    
+    permissions: [{
+        resource: {
+            type: String,
+            enum: ['users', 'transactions', 'reports', 'system', 'content', 'analytics']
+        },
+        actions: [{
+            type: String,
+            enum: ['create', 'read', 'update', 'delete', 'export', 'impersonate']
+        }],
+        scope: {
+            type: String,
+            enum: ['all', 'own', 'department', 'region'],
+            default: 'all'
+        }
+    }],
+    
+    // Admin specific info
+    department: String,
+    position: String,
+    employeeId: String,
+    
+    // Access control
+    allowedIPs: [String],
+    allowedDomains: [String],
+    mfaRequired: { type: Boolean, default: true },
+    sessionTimeout: { type: Number, default: 30 }, // minutes
+    
+    // Activity tracking
+    loginHistory: [{
+        ip: String,
+        userAgent: String,
+        timestamp: { type: Date, default: Date.now },
+        successful: Boolean,
+        location: String
+    }],
+    
+    actionLog: [{
+        action: String,
+        resource: String,
+        resourceId: mongoose.Schema.Types.ObjectId,
+        changes: mongoose.Schema.Types.Mixed,
+        ip: String,
+        timestamp: { type: Date, default: Date.now }
+    }],
+    
+    // Approval workflows
+    pendingApprovals: [{
+        type: {
+            type: String,
+            enum: ['user_suspension', 'content_moderation', 'refund', 'feature_access']
+        },
+        requestId: mongoose.Schema.Types.ObjectId,
+        requestedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        details: mongoose.Schema.Types.Mixed,
+        status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
+        createdAt: { type: Date, default: Date.now },
+        reviewedAt: Date,
+        reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Admin' }
+    }],
+    
+    // Dashboard preferences
+    dashboardConfig: {
+        defaultView: String,
+        widgets: [{
+            name: String,
+            position: Number,
+            config: mongoose.Schema.Types.Mixed,
+            enabled: Boolean
+        }],
+        refreshInterval: { type: Number, default: 5 } // minutes
+    },
+    
+    // Alert subscriptions
+    alertSubscriptions: [{
+        type: String,
+        severity: String,
+        channel: { type: String, enum: ['email', 'sms', 'dashboard'] },
+        enabled: Boolean
+    }],
+    
+    // System access
+    apiKeys: [{
+        name: String,
+        key: String,
+        lastUsed: Date,
+        expiresAt: Date,
+        permissions: [String]
+    }],
+    
+    // Status
+    isActive: { type: Boolean, default: true },
+    lastActive: Date,
+    
+    // Metadata
+    notes: String,
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Admin' },
+    updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Admin' }
+}, {
+    timestamps: true
+});
+
+// Indexes
+AdminSchema.index({ role: 1, isActive: 1 });
+AdminSchema.index({ 'permissions.resource': 1, 'permissions.actions': 1 });
+AdminSchema.index({ lastActive: -1 });
+
+// Methods
+AdminSchema.methods.hasPermission = function(resource, action) {
+    const permission = this.permissions.find(p => p.resource === resource);
+    if (!permission) return false;
+    
+    return permission.actions.includes(action) || permission.actions.includes('*');
+};
+
+AdminSchema.methods.logAction = function(action, resource, resourceId, changes, ip) {
+    this.actionLog.push({
+        action,
+        resource,
+        resourceId,
+        changes,
+        ip,
+        timestamp: new Date()
+    });
+    
+    // Keep only last 1000 actions
+    if (this.actionLog.length > 1000) {
+        this.actionLog = this.actionLog.slice(-1000);
+    }
+    
+    return this.save();
+};
+
+AdminSchema.methods.generateApiKey = function(name, expiresInDays = 30) {
+    const crypto = require('crypto');
+    const key = crypto.randomBytes(32).toString('hex');
+    
+    this.apiKeys.push({
+        name,
+        key,
+        expiresAt: new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000),
+        permissions: []
+    });
+    
+    return this.save();
+};
+
+module.exports = mongoose.model('Admin', AdminSchema);

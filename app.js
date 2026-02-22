@@ -18,11 +18,7 @@ const schedule = require("node-schedule");
 const ffmpeg = require('fluent-ffmpeg');
 const twilio = require('twilio');
 
-
-
 const PORT = process.env.PORT || 7000;
-
-
 
 // Load environment variables
 dotenv.config();
