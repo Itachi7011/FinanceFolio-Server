@@ -48,7 +48,7 @@ app.use(express.urlencoded({ extended: false }));
 require("./config/connection");
 
 
-const UsersDB = require("./models/User");
+const UsersDB = require("./models/Users/User");
 
 const userAuthenticate = require("./authenticateFunctions/userauthenticate");
 
